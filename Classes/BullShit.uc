@@ -9,10 +9,12 @@ class BullShit extends Info;
 
 const VERSION = "100";
 
+var BullShitSpectator spec;
+
 function PreBeginPlay()
 {
   log("[~] Starting BullShit version: "$VERSION);
   log("[~] Michiel 'El Muerte' Hendriks - elmuerte@drunksnipers.com");
   log("[~] The Drunk Snipers - http://www.drunksnipers.com");
-  Spawn(class'BullShitSpectator');
+  if (spec == none) spec = Spawn(class'BullShitSpectator');
 }

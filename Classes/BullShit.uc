@@ -1,13 +1,13 @@
 ///////////////////////////////////////////////////////////////////////////////
 // filename:    BullShit.uc
-// version:     102
+// version:     103
 // author:      Michiel 'El Muerte' Hendriks <elmuerte@drunksnipers.com>
 // perpose:     
 ///////////////////////////////////////////////////////////////////////////////
 
 class BullShit extends Info config;
 
-const VERSION = "102";
+const VERSION = "103";
 
 // settings
 var config float fKillFrequency;
@@ -16,6 +16,8 @@ var config float fChatFrequency;
 var config bool bChatMessages;
 var config float fEndFrequency;
 var config bool bEndMessages;
+var config float fScoreFrequency;
+var config bool bScoreMessages;
 
 var config bool bUseDelay;
 var config float fMinDelay;
@@ -66,6 +68,15 @@ function PreBeginPlay()
         if (spec.msgEndGameLost.length==0) spec.msgEndGameLost.Insert(1,1);
       }
     }
+    if (bScoreMessages)
+    {
+      bScoreMessages=(spec.msgScoreWe.length+spec.msgScoreThey.length)>0;
+      if (bScoreMessages)
+      {
+        if (spec.msgScoreWe.length==0) spec.msgScoreWe.Insert(1,1);
+        if (spec.msgScoreThey.length==0) spec.msgScoreThey.Insert(1,1);
+      }
+    }
   }
 }
 
@@ -77,6 +88,8 @@ defaultproperties
   bChatMessages=true
   fEndFrequency=0.75
   bEndMessages=true
+  fScoreFrequency=0.5
+  bScoreMessages=true
   bUseDelay=true
   fMinDelay=0.5
   fMaxDelay=2.5

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 // filename:    BullShitSpectator.uc
-// version:     102
+// version:     103
 // author:      Michiel 'El Muerte' Hendriks <elmuerte@drunksnipers.com>
 // perpose:     
 ///////////////////////////////////////////////////////////////////////////////
@@ -25,6 +25,12 @@ var config array<string> msgByeTrigger;
 // game end related
 var config array<string> msgEndGameWon; 
 var config array<string> msgEndGameLost; 
+
+// score events
+var config array<string> msgScoreWe; 
+var config array<string> msgScoreThey; 
+
+// praises
 
 struct DelayedMessage
 {
@@ -54,6 +60,7 @@ function string formatMessage(coerce string message, PlayerReplicationInfo Kille
   {
     ReplaceText(message, "%victim%", Killed.PlayerName);
     ReplaceText(message, "%player%", Killed.PlayerName);
+    ReplaceText(message, "%scorer%", Killed.PlayerName);
   }
   return message;
 }
@@ -71,6 +78,7 @@ function DoSpeak(Controller Speaker, string message)
       Messages[Messages.Length-1].delay = RandRange(config.fMinDelay, config.fMaxDelay);
       Messages[Messages.Length-1].message = message;
       Messages[Messages.Length-1].Speaker = Speaker;
+      //log(Messages[Messages.Length-1].delay@Speaker.PlayerReplicationInfo.PlayerName@message);
     }
   }
 }
@@ -238,7 +246,54 @@ function ClientVoiceMessage(PlayerReplicationInfo Sender, PlayerReplicationInfo 
 
 function ReceiveLocalizedMessage( class<LocalMessage> Message, optional int Switch, optional PlayerReplicationInfo RelatedPRI_1, optional PlayerReplicationInfo RelatedPRI_2, optional Object OptionalObject )
 {
-  // nothing
+  local bool bFilteredMessage;
+  local int WinningTeam;
+  local Controller C;
+
+  if ((!Level.Game.bTeamGame) || (!config.bScoreMessages)) return;
+  
+  //log(message@switch);
+
+  bFilteredMessage = false;
+  Message.Static.ClientReceive( Self, Switch, RelatedPRI_1, RelatedPRI_2, OptionalObject );
+  if (class<CTFMessage>(Message) != none) // CTF Messages
+  {
+    switch (switch)
+    {
+      case 0: // flag capture
+      case 1: // flag return
+      case 4: // flag taken
+              bFilteredMessage = true;
+              WinningTeam = RelatedPRI_1.Team.TeamIndex; 
+              break;
+    }    
+  }
+  else if (class<xBombMessage>(Message) != none)
+  {
+    switch (switch)
+    {
+      case 6: // got the ball
+              bFilteredMessage = true;
+              WinningTeam = RelatedPRI_1.Team.TeamIndex;
+              break;
+    } 
+  }
+
+  if (bFilteredMessage)
+  {
+    for ( C=Level.ControllerList; C!=None; C=C.NextController )
+    {
+      if ((C.PlayerReplicationInfo.bBot) && (C.PlayerReplicationInfo != RelatedPRI_1) && (C.PlayerReplicationInfo.Team != none))
+      {
+        if (speak(config.fScoreFrequency)) 
+        {
+          if (C.PlayerReplicationInfo.Team.TeamIndex == WinningTeam) // our team
+            DoSpeak(C, formatMessage(msgScoreWe[Rand(msgScoreWe.length)], C.PlayerReplicationInfo, RelatedPRI_1)); 
+            else DoSpeak(C, formatMessage(msgScoreThey[Rand(msgScoreThey.length)], C.PlayerReplicationInfo, RelatedPRI_1));
+        }
+      }
+    }
+  }
 }
 
 function string sayGameEnd(PlayerReplicationInfo PRI)
@@ -276,7 +331,6 @@ function SetTick(bool set)
   if (set) setTimer(DeltaTime, true);
 }
 
-//event Tick( float DeltaTime )
 event Timer()
 {
   local int i;
@@ -285,7 +339,8 @@ event Timer()
     messages[i].delay = messages[i].delay-DeltaTime;
     if (messages[i].delay <= 0)
     {
-      Level.Game.Broadcast(messages[i].Speaker, messages[i].message, 'Say');
+      if (messages[i].Speaker != none) Level.Game.Broadcast(messages[i].Speaker, messages[i].message, 'Say');
+      //else Log("Speaker is none");
       messages.remove(i, 1);
     }
   }

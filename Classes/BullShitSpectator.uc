@@ -7,13 +7,7 @@
 
 class BullShitSpectator extends MessagingSpectator config(BullShit);
 
-// settings
-var globalconfig float fKillFrequency;
-var globalconfig bool bKillMessages;
-var globalconfig float fChatFrequency;
-var globalconfig bool bChatMessages;
-var globalconfig float fEndFrequency;
-var globalconfig bool bEndMessages;
+var BullShit config;
 
 // kill related
 var config array<string> msgGotKilled; // say when the bot got killed
@@ -99,16 +93,16 @@ function string sayKilled(PlayerReplicationInfo Killer, PlayerReplicationInfo Ki
 function NotifyKilled(Controller Killer, Controller Killed, pawn Other)
 {
 	super.NotifyKilled(Killer, Killed, Other);
-  if (!bKillMessages) return;
+  if (!config.bKillMessages) return;
   if ((Killer.PlayerReplicationInfo != none) && (Killed.PlayerReplicationInfo != none))
   {
     if (Killer.PlayerReplicationInfo.bBot)
     {
-      if (speak(fKillFrequency)) DoSpeak(Killer, sayKilled(killer.PlayerReplicationInfo, killed.PlayerReplicationInfo));
+      if (speak(config.fKillFrequency)) DoSpeak(Killer, sayKilled(killer.PlayerReplicationInfo, killed.PlayerReplicationInfo));
     }
     if (Killed.PlayerReplicationInfo.bBot)
     {
-      if (speak(fKillFrequency)) DoSpeak(Killed, sayGotKilled(killer.PlayerReplicationInfo, killed.PlayerReplicationInfo));
+      if (speak(config.fKillFrequency)) DoSpeak(Killed, sayGotKilled(killer.PlayerReplicationInfo, killed.PlayerReplicationInfo));
     }
   }
 }
@@ -187,16 +181,16 @@ function TeamMessage( PlayerReplicationInfo PRI, coerce string S, name Type)
 {
   local int i;
   local Controller C;
-  if (!bChatMessages) return;
+  if (!config.bChatMessages) return;
   for (i = 0; i < msgHelloTrigger.length; i++)
   {
     if (MaskedCompare(S, msgHelloTrigger[i]))
     {
       for ( C=Level.ControllerList; C!=None; C=C.NextController )
       {
-        if (C.PlayerReplicationInfo.bBot && (PRI != C.PlayerReplicationInfo))
+        if (C.PlayerReplicationInfo.bBot && !PRI.bBot) // don't respond on bots
         {
-          if (speak(fChatFrequency)) DoSpeak(C, formatMessage(msgHello[Rand(msgHello.length)], C.PlayerReplicationInfo, PRI));
+          if (speak(config.fChatFrequency)) DoSpeak(C, formatMessage(msgHello[Rand(msgHello.length)], C.PlayerReplicationInfo, PRI));
         }
       }
     }
@@ -209,7 +203,7 @@ function TeamMessage( PlayerReplicationInfo PRI, coerce string S, name Type)
       {
         if (C.PlayerReplicationInfo.bBot && (PRI != C.PlayerReplicationInfo))
         {
-          if (speak(fChatFrequency)) DoSpeak(C, formatMessage(msgBye[Rand(msgBye.length)], C.PlayerReplicationInfo, PRI));
+          if (speak(config.fChatFrequency)) DoSpeak(C, formatMessage(msgBye[Rand(msgBye.length)], C.PlayerReplicationInfo, PRI));
         }
       }
     }
@@ -245,25 +239,13 @@ function ClientGameEnded()
 {
 	local Controller C;
 
-  if (!bEndMessages) return;
+  if (!config.bEndMessages) return;
 
   For ( C=Level.ControllerList; C!=None; C=C.NextController )
 	{
 		if (C.PlayerReplicationInfo.bBot)
     {
-      if (speak(fEndFrequency)) DoSpeak(C, sayGameEnd(C.PlayerReplicationInfo));
+      if (speak(config.fEndFrequency)) DoSpeak(C, sayGameEnd(C.PlayerReplicationInfo));
     }
 	}
-}
-
-defaultproperties 
-{
-  fKillFrequency=0.33
-  bKillMessages=true
-  fChatFrequency=0.5
-  bChatMessages=true
-  fEndFrequency=0.75
-  bEndMessages=true
-
-  msgGotKilled(0)="test"
 }

@@ -9,6 +9,8 @@ class BullShitSpectator extends MessagingSpectator config(BullShit);
 
 // settings
 var globalconfig float frequency;
+var globalconfig bool bKillMessages;
+var globalconfig bool bChatMessages;
 
 // kill related
 var config array<string> msgGotKilled; // say when the bot got killed
@@ -23,7 +25,7 @@ var config array<string> msgHello;
 // return true when the bot needs to speak
 function bool speak()
 {
-  return true;
+  return (frand()<=frequency);
 }
 
 function string formatMessage(coerce string message, PlayerReplicationInfo Killer, PlayerReplicationInfo Killed)
@@ -46,21 +48,22 @@ function DoSpeak(Controller Speaker, string message)
 
 function bool isTeamKill(PlayerReplicationInfo Killer, PlayerReplicationInfo Killed)
 {
-  return false;
+  if (Killer.Team == none) return false;
+  return (Killer.Team == Killed.Team);
 }
 
 function string sayGotKilled(PlayerReplicationInfo Killer, PlayerReplicationInfo Killed)
 {
   if (Killed == Killer) // suicide
   {
-    return formatMessage(msgSuicide[Rand(msgSuicide.length-1)], Killer, Killed);
+    return formatMessage(msgSuicide[Rand(msgSuicide.length)], Killer, Killed);
   }
   else if (isTeamKill(Killer, Killed))
   {
-    return formatMessage(msgTeamKill[Rand(msgTeamKill.length-1)], Killer, Killed);
+    return formatMessage(msgTeamKill[Rand(msgTeamKill.length)], Killer, Killed);
   }
   else {
-    return formatMessage(msgGotKilled[Rand(msgGotKilled.length-1)], Killer, Killed);
+    return formatMessage(msgGotKilled[Rand(msgGotKilled.length)], Killer, Killed);
   }
 }
 
@@ -68,16 +71,17 @@ function string sayKilled(PlayerReplicationInfo Killer, PlayerReplicationInfo Ki
 {
   if (isTeamKill(Killer, Killed))
   {
-    return formatMessage(msgMadeTeamKill[Rand(msgMadeTeamKill.length-1)], Killer, Killed);
+    return formatMessage(msgMadeTeamKill[Rand(msgMadeTeamKill.length)], Killer, Killed);
   }
   else {
-    return formatMessage(msgKilled[Rand(msgKilled.length-1)], Killer, Killed);
+    return formatMessage(msgKilled[Rand(msgKilled.length)], Killer, Killed);
    }
 }
 
 function NotifyKilled(Controller Killer, Controller Killed, pawn Other)
 {
 	super.NotifyKilled(Killer, Killed, Other);
+  if (!bKillMessages) return
   if ((Killer.PlayerReplicationInfo != none) && (Killed.PlayerReplicationInfo != none))
   {
     if (Killer.PlayerReplicationInfo.bBot)
@@ -91,8 +95,10 @@ function NotifyKilled(Controller Killer, Controller Killed, pawn Other)
   }
 }
 
+// TODO: listen on chatter
 event ClientMessage( coerce string S, optional Name Type )
 {
+  if (!bChatMessages) return;
   // nothing
 }
 
@@ -111,8 +117,17 @@ function ReceiveLocalizedMessage( class<LocalMessage> Message, optional int Swit
   // nothing
 }
 
+function ClientGameEnded()
+{
+  // TODO: random bots say stuff
+}
+
 defaultproperties 
 {
+  frequency=1.0
+  bKillMessages=true
+  bChatMessages=true
+
   msgGotKilled(0)="Damn it!"
   msgGotKilled(1)="Didn't see you there %killer%"
   msgGotKilled(2)="Nice shot %killer%"

@@ -14,54 +14,58 @@ var config string msg_no_weapon;
 
 // kill related
 var config array<string> msgGotKilled; // say when the bot got killed
-var config int liGotKilled;
+var int liGotKilled;
 var config array<string> msgKilled; // say when the bot killed
-var config int liKilled;
+var int liKilled;
 var config array<string> msgSuicide;
-var config int liSuicide;
+var int liSuicide;
 var config array<string> msgTeamKill;
-var config int liTeamKill;
+var int liTeamKill;
 var config array<string> msgMadeTeamKill;
-var config int liMadeTeamKill;
+var int liMadeTeamKill;
 
 // message related
 var int LastHello;
 var config array<string> msgHello;
-var config int liHello;
+var int liHello;
 var config array<string> msgHelloTrigger;
 var int LastBye;
 var config array<string> msgBye;
-var config int liBye;
+var int liBye;
 var config array<string> msgByeTrigger;
 
 // game end related
 var config array<string> msgEndGameWon;
-var config int liEndGameWon;
+var int liEndGameWon;
 var config array<string> msgEndGameLost;
-var config int liEndGameLost;
+var int liEndGameLost;
 
 // score events
 var config array<string> msgScoreWe;
-var config int liScoreWe;
+var int liScoreWe;
 var config array<string> msgScoreThey;
-var config int liScoreThey;
+var int liScoreThey;
 
 // extra triggers
 var config array<string> msgXtra1;
-var config int liXtra1;
+var int liXtra1;
 var config array<string> msgXtra1Trigger;
 var config array<string> msgXtra2;
-var config int liXtra2;
+var int liXtra2;
 var config array<string> msgXtra2Trigger;
 var config array<string> msgXtra3;
-var config int liXtra3;
+var int liXtra3;
 var config array<string> msgXtra3Trigger;
 var config array<string> msgXtra4;
-var config int liXtra4;
+var int liXtra4;
 var config array<string> msgXtra4Trigger;
 var config array<string> msgXtra5;
-var config int liXtra5;
+var int liXtra5;
 var config array<string> msgXtra5Trigger;
+
+// random chit chat
+var config array<string> msgChitChat;
+var int liChitChat;
 
 struct DelayedMessage
 {
@@ -90,6 +94,22 @@ function int getLine(array<string> lines, int lastline)
   return nextline;
 }
 
+function string GetRandomName()
+{
+  local int i;
+  local Controller P;
+  i = int(frand()*Level.Game.NumPlayers);
+  for ( P=Level.ControllerList; P!=None; P=P.nextController )
+	{
+    if (P.PlayerReplicationInfo != None)
+		{
+				i--;
+        if (i <= 0) return P.PlayerReplicationInfo.PlayerName;
+		}
+  }
+  return "";
+}
+
 function string formatMessage(coerce string message, PlayerReplicationInfo Killer, PlayerReplicationInfo Killed,
                               optional string kweapon, optional string vweapon)
 {
@@ -113,6 +133,11 @@ function string formatMessage(coerce string message, PlayerReplicationInfo Kille
   }
   if (vweapon != "") ReplaceText(message, "%vweapon%", vweapon);
     else ReplaceText(message, "%vweapon%", msg_no_weapon);
+
+  if (InStr(message, "%rplayer%") > -1)
+  {
+    ReplaceText(message, "%rplayer%", GetRandomName());
+  }
   return message;
 }
 
@@ -555,6 +580,7 @@ function InitPlayerReplicationInfo()
 {  
 	Super.InitPlayerReplicationInfo();
 	PlayerReplicationInfo.PlayerName="BullShit"; 
+  SetTimer(config.iChitChat, true);
 }
 
 function AddSquadAI()
@@ -571,6 +597,29 @@ function AddSquadAI()
       TeamGame(Level.Game).Teams[0].AI.Squads = sai;
     }
   }
+}
+
+function RandomChitChat()
+{
+	local Controller C;
+
+  if (!config.bChitChat) return;
+  For ( C=Level.ControllerList; C!=None; C=C.NextController )
+	{
+		if (C.PlayerReplicationInfo.bBot)
+    {
+      if (speak(config.fChitChat)) 
+      {
+        liChitChat = getLine(msgChitChat, liChitChat);
+        DoSpeak(C, formatMessage(msgChitChat[liChitChat], C.PlayerReplicationInfo, none));
+      }
+    }
+	}
+}
+
+event Timer()
+{
+  RandomChitChat();
 }
 
 defaultproperties

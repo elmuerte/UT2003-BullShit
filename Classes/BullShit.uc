@@ -7,7 +7,7 @@
 
 class BullShit extends Info config;
 
-const VERSION = "113";
+const VERSION = "114";
 
 // settings
 var config float fKillFrequency;
@@ -24,6 +24,10 @@ var config float fMinDelay;
 var config float fMaxDelay;
 
 var config int iGreetDelay;
+
+var config bool bChitChat;
+var config float fChitChat;
+var config int iChitChat;
 
 var BullShitSpectator spec;
 
@@ -116,4 +120,7 @@ defaultproperties
   fMinDelay=0.5
   fMaxDelay=2.5
   iGreetDelay=5
+  bChitChat=false
+  fChitChat=0.2
+  iChitChat=60
 }

@@ -8,6 +8,7 @@
 class BullShitSpectator extends MessagingSpectator config(BullShit);
 
 var BullShit config;
+var bool bHasSquadAI;
 
 var config string msg_no_weapon;
 
@@ -63,20 +64,20 @@ function string formatMessage(coerce string message, PlayerReplicationInfo Kille
     ReplaceText(message, "%winner%", Killer.PlayerName);
     ReplaceText(message, "%speaker%", Killer.PlayerName);
     ReplaceText(message, "%kscore%", string(round(Killer.Score)));
-    ReplaceText(message, "%kdeaths%", string(round(Killer.Deaths)));
-    if (kweapon != "") ReplaceText(message, "%kweapon%", kweapon);
-      else ReplaceText(message, "%kweapon%", msg_no_weapon);
+    ReplaceText(message, "%kdeaths%", string(round(Killer.Deaths)));    
   }
+  if (kweapon != "") ReplaceText(message, "%kweapon%", kweapon);
+    else ReplaceText(message, "%kweapon%", msg_no_weapon);
   if (Killed != none)
   {
     ReplaceText(message, "%victim%", Killed.PlayerName);
     ReplaceText(message, "%player%", Killed.PlayerName);
     ReplaceText(message, "%scorer%", Killed.PlayerName);
     ReplaceText(message, "%vscore%", string(round(Killed.Score)));
-    ReplaceText(message, "%vdeaths%", string(round(Killed.Deaths)));
-    if (vweapon != "") ReplaceText(message, "%vweapon%", vweapon);
-      else ReplaceText(message, "%vweapon%", msg_no_weapon);
+    ReplaceText(message, "%vdeaths%", string(round(Killed.Deaths)));    
   }
+  if (vweapon != "") ReplaceText(message, "%vweapon%", vweapon);
+    else ReplaceText(message, "%vweapon%", msg_no_weapon);
   return message;
 }
 
@@ -139,7 +140,7 @@ function string sayKilled(Controller Killer, Controller Killed)
   }
   else {
     return formatMessage(msgKilled[Rand(msgKilled.length)], Killer.PlayerReplicationInfo, Killed.PlayerReplicationInfo, kweapon, vweapon);
-   }
+  }
 }
 
 function NotifyKilled(Controller Killer, Controller Killed, pawn Other)
@@ -436,12 +437,29 @@ function ClientGameEnded()
 }
 
 function InitPlayerReplicationInfo()
-{
+{  
 	Super.InitPlayerReplicationInfo();
-	PlayerReplicationInfo.PlayerName="BullShit";
+	PlayerReplicationInfo.PlayerName="BullShit"; 
+}
+
+function AddSquadAI()
+{
+  local TeamBullShit sai;
+  if (Level.Game.bTeamGame && (!bHasSquadAI)) 
+  {
+    if (TeamGame(Level.Game).Teams[0] != none)
+    {
+      bHasSquadAI = true;
+      sai = spawn(class'TeamBullShit');
+      sai.init(self);
+      sai.NextSquad = TeamGame(Level.Game).Teams[0].AI.Squads;
+      TeamGame(Level.Game).Teams[0].AI.Squads = sai;
+    }
+  }
 }
 
 defaultproperties
 {
+  bHasSquadAI=false
   msg_no_weapon="no weapon"
 }

@@ -1,13 +1,13 @@
 ///////////////////////////////////////////////////////////////////////////////
 // filename:    BullShit.uc
-// version:     101
+// version:     102
 // author:      Michiel 'El Muerte' Hendriks <elmuerte@drunksnipers.com>
 // perpose:     
 ///////////////////////////////////////////////////////////////////////////////
 
 class BullShit extends Info config;
 
-const VERSION = "101";
+const VERSION = "102";
 
 // settings
 var config float fKillFrequency;
@@ -16,6 +16,10 @@ var config float fChatFrequency;
 var config bool bChatMessages;
 var config float fEndFrequency;
 var config bool bEndMessages;
+
+var config bool bUseDelay;
+var config float fMinDelay;
+var config float fMaxDelay;
 
 var BullShitSpectator spec;
 
@@ -28,6 +32,7 @@ function PreBeginPlay()
   {
     spec = Spawn(class'BullShitSpectator');
     spec.config = self;
+    spec.SetTick(bUseDelay);
     // check lines
     if (bKillMessages)
     {
@@ -72,4 +77,7 @@ defaultproperties
   bChatMessages=true
   fEndFrequency=0.75
   bEndMessages=true
+  bUseDelay=true
+  fMinDelay=0.5
+  fMaxDelay=2.5
 }

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 // filename:    BullShitSpectator.uc
-// version:     100
+// version:     101
 // author:      Michiel 'El Muerte' Hendriks <elmuerte@drunksnipers.com>
 // perpose:     
 ///////////////////////////////////////////////////////////////////////////////
@@ -26,6 +26,16 @@ var config array<string> msgByeTrigger;
 var config array<string> msgEndGameWon; 
 var config array<string> msgEndGameLost; 
 
+struct DelayedMessage
+{
+  var float delay;
+  var string message;
+  var Controller Speaker;
+};
+var array<DelayedMessage> Messages;
+
+const DeltaTime = 0.1;
+
 // return true when the bot needs to speak
 function bool speak(float frequency)
 {
@@ -38,7 +48,7 @@ function string formatMessage(coerce string message, PlayerReplicationInfo Kille
   {
     ReplaceText(message, "%killer%", Killer.PlayerName);
     ReplaceText(message, "%winner%", Killer.PlayerName);
-    ReplaceText(message, "%speaker%", Killed.PlayerName);
+    ReplaceText(message, "%speaker%", Killer.PlayerName);
   }
   if (Killed != none)
   {
@@ -53,8 +63,16 @@ function DoSpeak(Controller Speaker, string message)
   if (message == "") return;
   if (Speaker != none)
   {
-    Level.Game.Broadcast(Speaker, message, 'Say');
     //log(Speaker.PlayerReplicationInfo.PlayerName$":"@message);
+    if (!config.bUseDelay) Level.Game.Broadcast(Speaker, message, 'Say');
+    else {
+      // delayed message
+      Messages.Length = Messages.Length+1;
+      Messages[Messages.Length-1].delay = RandRange(config.fMinDelay, config.fMaxDelay);
+      Messages[Messages.Length-1].message = message;
+      Messages[Messages.Length-1].Speaker = Speaker;
+      log("Added delayed message:"@Messages[Messages.Length-1].delay@Messages[Messages.Length-1].message);
+    }
   }
 }
 
@@ -94,6 +112,8 @@ function NotifyKilled(Controller Killer, Controller Killed, pawn Other)
 {
 	super.NotifyKilled(Killer, Killed, Other);
   if (!config.bKillMessages) return;
+  if (killer == none) killer = killed;
+  if (killer == none || killed == none) return;
   if ((Killer.PlayerReplicationInfo != none) && (Killed.PlayerReplicationInfo != none))
   {
     if (Killer.PlayerReplicationInfo.bBot)
@@ -182,13 +202,14 @@ function TeamMessage( PlayerReplicationInfo PRI, coerce string S, name Type)
   local int i;
   local Controller C;
   if (!config.bChatMessages) return;
+  if (PRI.bBot) return; // don't respond on bots
   for (i = 0; i < msgHelloTrigger.length; i++)
   {
     if (MaskedCompare(S, msgHelloTrigger[i]))
     {
       for ( C=Level.ControllerList; C!=None; C=C.NextController )
       {
-        if (C.PlayerReplicationInfo.bBot && !PRI.bBot) // don't respond on bots
+        if (C.PlayerReplicationInfo.bBot)
         {
           if (speak(config.fChatFrequency)) DoSpeak(C, formatMessage(msgHello[Rand(msgHello.length)], C.PlayerReplicationInfo, PRI));
         }
@@ -201,7 +222,7 @@ function TeamMessage( PlayerReplicationInfo PRI, coerce string S, name Type)
     {
       for ( C=Level.ControllerList; C!=None; C=C.NextController )
       {
-        if (C.PlayerReplicationInfo.bBot && (PRI != C.PlayerReplicationInfo))
+        if (C.PlayerReplicationInfo.bBot)
         {
           if (speak(config.fChatFrequency)) DoSpeak(C, formatMessage(msgBye[Rand(msgBye.length)], C.PlayerReplicationInfo, PRI));
         }
@@ -248,4 +269,25 @@ function ClientGameEnded()
       if (speak(config.fEndFrequency)) DoSpeak(C, sayGameEnd(C.PlayerReplicationInfo));
     }
 	}
+}
+
+function SetTick(bool set)
+{
+  if (set) setTimer(DeltaTime, true);
+}
+
+//event Tick( float DeltaTime )
+event Timer()
+{
+  local int i;
+  for (i = 0; i < messages.length; i++)
+  {
+    messages[i].delay = messages[i].delay-DeltaTime;
+    if (messages[i].delay <= 0)
+    {
+      log("speak"@messages[i].message);
+      Level.Game.Broadcast(messages[i].Speaker, messages[i].message, 'Say');
+      messages.remove(i, 1);
+    }
+  }
 }

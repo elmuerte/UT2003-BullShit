@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 // filename:    BullShitSpectator.uc
-// version:     109
+// version:     112
 // author:      Michiel 'El Muerte' Hendriks <elmuerte@drunksnipers.com>
 // perpose:
 ///////////////////////////////////////////////////////////////////////////////
@@ -14,32 +14,54 @@ var config string msg_no_weapon;
 
 // kill related
 var config array<string> msgGotKilled; // say when the bot got killed
+var config int liGotKilled;
 var config array<string> msgKilled; // say when the bot killed
+var config int liKilled;
 var config array<string> msgSuicide;
+var config int liSuicide;
 var config array<string> msgTeamKill;
+var config int liTeamKill;
 var config array<string> msgMadeTeamKill;
+var config int liMadeTeamKill;
 
 // message related
+var int LastHello;
 var config array<string> msgHello;
+var config int liHello;
 var config array<string> msgHelloTrigger;
+var int LastBye;
 var config array<string> msgBye;
+var config int liBye;
 var config array<string> msgByeTrigger;
 
 // game end related
 var config array<string> msgEndGameWon;
+var config int liEndGameWon;
 var config array<string> msgEndGameLost;
+var config int liEndGameLost;
 
 // score events
 var config array<string> msgScoreWe;
+var config int liScoreWe;
 var config array<string> msgScoreThey;
+var config int liScoreThey;
 
 // extra triggers
 var config array<string> msgXtra1;
+var config int liXtra1;
 var config array<string> msgXtra1Trigger;
 var config array<string> msgXtra2;
+var config int liXtra2;
 var config array<string> msgXtra2Trigger;
 var config array<string> msgXtra3;
+var config int liXtra3;
 var config array<string> msgXtra3Trigger;
+var config array<string> msgXtra4;
+var config int liXtra4;
+var config array<string> msgXtra4Trigger;
+var config array<string> msgXtra5;
+var config int liXtra5;
+var config array<string> msgXtra5Trigger;
 
 struct DelayedMessage
 {
@@ -49,10 +71,23 @@ struct DelayedMessage
 };
 var array<DelayedMessage> Messages;
 
-// return true when the bot needs to speak
+/** return true when the bot needs to speak */
 function bool speak(float frequency)
 {
   return (frand()<=frequency);
+}
+
+/** get a random line from an array preventing the usage of the last line */
+function int getLine(array<string> lines, int lastline)
+{
+  local int nextline;
+  if (lines.length == 1) return 0;
+  nextline = Rand(lines.length);
+  while (nextline == lastline)
+  {
+    nextline = Rand(lines.length);
+  }
+  return nextline;
 }
 
 function string formatMessage(coerce string message, PlayerReplicationInfo Killer, PlayerReplicationInfo Killed,
@@ -115,14 +150,17 @@ function string sayGotKilled(Controller Killer, Controller Killed)
   if (Killed.LastPawnWeapon != none) vweapon = Killed.LastPawnWeapon.default.ItemName;
   if (Killed == Killer) // suicide
   {
-    return formatMessage(msgSuicide[Rand(msgSuicide.length)], Killer.PlayerReplicationInfo, Killed.PlayerReplicationInfo, kweapon, vweapon);
+    liSuicide = getLine(msgSuicide, liSuicide);
+    return formatMessage(msgSuicide[liSuicide], Killer.PlayerReplicationInfo, Killed.PlayerReplicationInfo, kweapon, vweapon);
   }
   else if (isTeamKill(Killer.PlayerReplicationInfo, Killed.PlayerReplicationInfo))
   {
-    return formatMessage(msgTeamKill[Rand(msgTeamKill.length)], Killer.PlayerReplicationInfo, Killed.PlayerReplicationInfo, kweapon, vweapon);
+    liTeamKill = getLine(msgTeamKill, liTeamKill);
+    return formatMessage(msgTeamKill[liTeamKill], Killer.PlayerReplicationInfo, Killed.PlayerReplicationInfo, kweapon, vweapon);
   }
   else {
-    return formatMessage(msgGotKilled[Rand(msgGotKilled.length)], Killer.PlayerReplicationInfo, Killed.PlayerReplicationInfo, kweapon, vweapon);
+    liGotKilled = getLine(msgGotKilled, liGotKilled);
+    return formatMessage(msgGotKilled[liGotKilled], Killer.PlayerReplicationInfo, Killed.PlayerReplicationInfo, kweapon, vweapon);
   }
 }
 
@@ -136,10 +174,12 @@ function string sayKilled(Controller Killer, Controller Killed)
   if (Killed.LastPawnWeapon != none) vweapon = Killed.LastPawnWeapon.default.ItemName;
   if (isTeamKill(Killer.PlayerReplicationInfo, Killed.PlayerReplicationInfo))
   {
-    return formatMessage(msgMadeTeamKill[Rand(msgMadeTeamKill.length)], Killer.PlayerReplicationInfo, Killed.PlayerReplicationInfo, kweapon, vweapon);
+    liMadeTeamKill = getLine(msgMadeTeamKill, liMadeTeamKill);
+    return formatMessage(msgMadeTeamKill[liMadeTeamKill], Killer.PlayerReplicationInfo, Killed.PlayerReplicationInfo, kweapon, vweapon);
   }
   else {
-    return formatMessage(msgKilled[Rand(msgKilled.length)], Killer.PlayerReplicationInfo, Killed.PlayerReplicationInfo, kweapon, vweapon);
+    liKilled = getLine(msgKilled, liKilled);
+    return formatMessage(msgKilled[liKilled], Killer.PlayerReplicationInfo, Killed.PlayerReplicationInfo, kweapon, vweapon);
   }
 }
 
@@ -243,26 +283,42 @@ function TeamMessage( PlayerReplicationInfo PRI, coerce string S, name Type)
   {
     if (MaskedCompare(S, msgHelloTrigger[i]))
     {
-      for ( C=Level.ControllerList; C!=None; C=C.NextController )
+      if (Level.TimeSeconds - LastHello >= config.iGreetDelay)
       {
-        if (C.PlayerReplicationInfo.bBot)
+        for ( C=Level.ControllerList; C!=None; C=C.NextController )
         {
-          if (speak(config.fChatFrequency)) DoSpeak(C, formatMessage(msgHello[Rand(msgHello.length)], C.PlayerReplicationInfo, PRI));
+          if ((C.PlayerReplicationInfo != none) && C.PlayerReplicationInfo.bBot)
+          {
+            if (speak(config.fChatFrequency)) 
+            {
+              liHello = getLine(msgHello, liHello);
+              DoSpeak(C, formatMessage(msgHello[liHello], C.PlayerReplicationInfo, PRI));
+            }
+          }
         }
       }
+      LastHello = Level.TimeSeconds;
     }
   }
   for (i = 0; i < msgByeTrigger.length; i++)
   {
     if (MaskedCompare(S, msgByeTrigger[i]))
     {
-      for ( C=Level.ControllerList; C!=None; C=C.NextController )
+      if (Level.TimeSeconds - LastBye >= config.iGreetDelay)
       {
-        if (C.PlayerReplicationInfo.bBot)
+        for ( C=Level.ControllerList; C!=None; C=C.NextController )
         {
-          if (speak(config.fChatFrequency)) DoSpeak(C, formatMessage(msgBye[Rand(msgBye.length)], C.PlayerReplicationInfo, PRI));
-        }
+          if ((C.PlayerReplicationInfo != none) && C.PlayerReplicationInfo.bBot)
+          {
+            if (speak(config.fChatFrequency)) 
+            {
+              liBye = getLine(msgBye, liBye);
+              DoSpeak(C, formatMessage(msgBye[liBye], C.PlayerReplicationInfo, PRI));
+            }
+          }
+        }        
       }
+      LastBye = Level.TimeSeconds;
     }
   }
   // xtra 1
@@ -272,9 +328,13 @@ function TeamMessage( PlayerReplicationInfo PRI, coerce string S, name Type)
     {
       for ( C=Level.ControllerList; C!=None; C=C.NextController )
       {
-        if (C.PlayerReplicationInfo.bBot)
+        if ((C.PlayerReplicationInfo != none) && C.PlayerReplicationInfo.bBot)
         {
-          if (speak(config.fChatFrequency)) DoSpeak(C, formatMessage(msgXtra1[Rand(msgXtra1.length)], C.PlayerReplicationInfo, PRI));
+          if (speak(config.fChatFrequency)) 
+          {
+            liXtra1 = getLine(msgXtra1, liXtra1);
+            DoSpeak(C, formatMessage(msgXtra1[Rand(msgXtra1.length)], C.PlayerReplicationInfo, PRI));
+          }
         }
       }
     }
@@ -286,9 +346,13 @@ function TeamMessage( PlayerReplicationInfo PRI, coerce string S, name Type)
     {
       for ( C=Level.ControllerList; C!=None; C=C.NextController )
       {
-        if (C.PlayerReplicationInfo.bBot)
+        if ((C.PlayerReplicationInfo != none) && C.PlayerReplicationInfo.bBot)
         {
-          if (speak(config.fChatFrequency)) DoSpeak(C, formatMessage(msgXtra2[Rand(msgXtra2.length)], C.PlayerReplicationInfo, PRI));
+          if (speak(config.fChatFrequency)) 
+          {
+            liXtra2 = getLine(msgXtra2, liXtra2);
+            DoSpeak(C, formatMessage(msgXtra2[liXtra2], C.PlayerReplicationInfo, PRI));
+          }
         }
       }
     }
@@ -300,9 +364,49 @@ function TeamMessage( PlayerReplicationInfo PRI, coerce string S, name Type)
     {
       for ( C=Level.ControllerList; C!=None; C=C.NextController )
       {
-        if (C.PlayerReplicationInfo.bBot)
+        if ((C.PlayerReplicationInfo != none) && C.PlayerReplicationInfo.bBot)
         {
-          if (speak(config.fChatFrequency)) DoSpeak(C, formatMessage(msgXtra3[Rand(msgXtra3.length)], C.PlayerReplicationInfo, PRI));
+          if (speak(config.fChatFrequency)) 
+          {
+            liXtra3 = getLine(msgXtra3, liXtra3);
+            DoSpeak(C, formatMessage(msgXtra3[liXtra3], C.PlayerReplicationInfo, PRI));
+          }
+        }
+      }
+    }
+  }
+  // xtra 4
+  for (i = 0; i < msgXtra4Trigger.length; i++)
+  {
+    if (MaskedCompare(S, msgXtra4Trigger[i]))
+    {
+      for ( C=Level.ControllerList; C!=None; C=C.NextController )
+      {
+        if ((C.PlayerReplicationInfo != none) && C.PlayerReplicationInfo.bBot)
+        {
+          if (speak(config.fChatFrequency)) 
+          {
+            liXtra4 = getLine(msgXtra4, liXtra4);
+            DoSpeak(C, formatMessage(msgXtra4[liXtra4], C.PlayerReplicationInfo, PRI));
+          }
+        }
+      }
+    }
+  }
+  // xtra 5
+  for (i = 0; i < msgXtra5Trigger.length; i++)
+  {
+    if (MaskedCompare(S, msgXtra5Trigger[i]))
+    {
+      for (C=Level.ControllerList; C!=None; C=C.NextController )
+      {
+        if ((C.PlayerReplicationInfo != none) && C.PlayerReplicationInfo.bBot)
+        {
+          if (speak(config.fChatFrequency)) 
+          {
+            liXtra5 = getLine(msgXtra5, liXtra5);
+            DoSpeak(C, formatMessage(msgXtra5[liXtra5], C.PlayerReplicationInfo, PRI));
+          }
         }
       }
     }
@@ -356,13 +460,20 @@ simulated function ReceiveLocalizedMessage( class<LocalMessage> Message, optiona
   {
     for ( C=Level.ControllerList; C!=None; C=C.NextController )
     {
-      if ((C.PlayerReplicationInfo.bBot) && (C.PlayerReplicationInfo != RelatedPRI_1) && (C.PlayerReplicationInfo.Team != none))
+      if ((C.PlayerReplicationInfo != none) && (C.PlayerReplicationInfo.bBot) && 
+        (C.PlayerReplicationInfo != RelatedPRI_1) && (C.PlayerReplicationInfo.Team != none))
       {
         if (speak(config.fScoreFrequency))
         {
           if (C.PlayerReplicationInfo.Team.TeamIndex == WinningTeam) // our team
-            DoSpeak(C, formatMessage(msgScoreWe[Rand(msgScoreWe.length)], C.PlayerReplicationInfo, RelatedPRI_1));
-            else DoSpeak(C, formatMessage(msgScoreThey[Rand(msgScoreThey.length)], C.PlayerReplicationInfo, RelatedPRI_1));
+          {
+            liScoreWe = getLine(msgScoreWe, liScoreWe);
+            DoSpeak(C, formatMessage(msgScoreWe[liScoreWe], C.PlayerReplicationInfo, RelatedPRI_1));
+          }
+          else {
+            liScoreThey = getLine(msgScoreThey, liScoreThey);
+            DoSpeak(C, formatMessage(msgScoreThey[liScoreThey], C.PlayerReplicationInfo, RelatedPRI_1));
+          }
         }
       }
     }
@@ -405,19 +516,23 @@ function string sayGameEnd(PlayerReplicationInfo PRI)
   {
     if (PRI.Team == Level.Game.GameReplicationInfo.Winner) // my team won
     {
-      return formatMessage(msgEndGameWon[Rand(msgEndGameWon.length)], PRI, GetLowestScoringTeamPlayer(Level.Game.OtherTeam(PRI.Team)));
+      liEndGameWon = getLine(msgEndGameWon, liEndGameWon);
+      return formatMessage(msgEndGameWon[liEndGameWon], PRI, GetLowestScoringTeamPlayer(Level.Game.OtherTeam(PRI.Team)));
     }
     else {
-      return formatMessage(msgEndGameLost[Rand(msgEndGameLost.length)], GetHeightsScoringTeamPlayer(Level.Game.OtherTeam(PRI.Team)), PRI);
+      liEndGameLost = getLine(msgEndGameLost, liEndGameLost);
+      return formatMessage(msgEndGameLost[liEndGameLost], GetHeightsScoringTeamPlayer(Level.Game.OtherTeam(PRI.Team)), PRI);
     }
   }
   else {
     if (PRI == Level.Game.GameReplicationInfo.Winner) // player won
     {
-      return formatMessage(msgEndGameWon[Rand(msgEndGameWon.length)], PRI, PlayerReplicationInfo(Level.Game.GameReplicationInfo.Winner));
+      liEndGameWon = getLine(msgEndGameWon, liEndGameWon);
+      return formatMessage(msgEndGameWon[liEndGameWon], PRI, PlayerReplicationInfo(Level.Game.GameReplicationInfo.Winner));
     }
     else {
-      return formatMessage(msgEndGameLost[Rand(msgEndGameLost.length)], PlayerReplicationInfo(Level.Game.GameReplicationInfo.Winner), PRI);
+      liEndGameLost = getLine(msgEndGameLost, liEndGameLost);
+      return formatMessage(msgEndGameLost[liEndGameLost], PlayerReplicationInfo(Level.Game.GameReplicationInfo.Winner), PRI);
     }
   }
 }

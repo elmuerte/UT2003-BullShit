@@ -1,13 +1,13 @@
 ///////////////////////////////////////////////////////////////////////////////
 // filename:    BullShit.uc
-// version:     111
+// version:     112
 // author:      Michiel 'El Muerte' Hendriks <elmuerte@drunksnipers.com>
 // perpose:     
 ///////////////////////////////////////////////////////////////////////////////
 
 class BullShit extends Info config;
 
-const VERSION = "111";
+const VERSION = "112";
 
 // settings
 var config float fKillFrequency;
@@ -22,6 +22,8 @@ var config bool bScoreMessages;
 var config bool bUseDelay;
 var config float fMinDelay;
 var config float fMaxDelay;
+
+var config int iGreetDelay;
 
 var BullShitSpectator spec;
 
@@ -60,6 +62,8 @@ function PreBeginPlay()
         if (spec.msgXtra1.length==0) spec.msgXtra1.Insert(0,1);
         if (spec.msgXtra2.length==0) spec.msgXtra2.Insert(0,1);
         if (spec.msgXtra3.length==0) spec.msgXtra3.Insert(0,1);
+        if (spec.msgXtra4.length==0) spec.msgXtra4.Insert(0,1);
+        if (spec.msgXtra5.length==0) spec.msgXtra5.Insert(0,1);
       }
     }
     if (bEndMessages)
@@ -111,4 +115,5 @@ defaultproperties
   bUseDelay=true
   fMinDelay=0.5
   fMaxDelay=2.5
+  iGreetDelay=5
 }

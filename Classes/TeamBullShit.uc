@@ -11,10 +11,10 @@ var BullShitSpectator spec;
 
 function init(BullShitSpectator spect)
 {
-  Team = TeamGame(Level.Game).Teams[0];
+  Team = none;
   spec = spect;
-  SquadLeader = spawn(class'Controller'); // bogus controller
-  size = MaxSquadSize;
+  SquadLeader = spawn(class'BullShitController'); // bogus controller
+  size = 0;
 }
 
 function NotifyKilled(Controller Killer, Controller Killed, pawn KilledPawn)
@@ -24,16 +24,24 @@ function NotifyKilled(Controller Killer, Controller Killed, pawn KilledPawn)
 
 function int GetSize()
 {
-	return MaxSquadSize;
+	return 0;
 }
 
 function AddBot(Bot B)
 {
-  if (NextSquad != none) AddBot(B);
+  if (NextSquad != none)
+  {
+    AddBot(B);
+  }
   return;
 }
 
 function SetLeader(Controller C)
 {
   return;
+}
+
+function float BotSuitability(Bot B)
+{
+  return 0;
 }

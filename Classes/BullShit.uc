@@ -1,13 +1,13 @@
 ///////////////////////////////////////////////////////////////////////////////
 // filename:    BullShit.uc
-// version:     103
+// version:     105
 // author:      Michiel 'El Muerte' Hendriks <elmuerte@drunksnipers.com>
 // perpose:     
 ///////////////////////////////////////////////////////////////////////////////
 
 class BullShit extends Info config;
 
-const VERSION = "103";
+const VERSION = "105";
 
 // settings
 var config float fKillFrequency;
@@ -50,13 +50,14 @@ function PreBeginPlay()
     }
     if (bChatMessages)
     {
-      bChatMessages=(spec.msgHello.length+spec.msgHelloTrigger.length+spec.msgBye.length+spec.msgByeTrigger.length)>0;
+      bChatMessages=(spec.msgHelloTrigger.length+spec.msgByeTrigger.length+spec.msgXtra1Trigger.length+spec.msgXtra2Trigger.length+spec.msgXtra3Trigger.length)>0;
       if (bChatMessages)
       {
         if (spec.msgHello.length==0) spec.msgHello.Insert(1,1);
-        if (spec.msgHelloTrigger.length==0) spec.msgHelloTrigger.Insert(1,1);
         if (spec.msgBye.length==0) spec.msgBye.Insert(1,1);
-        if (spec.msgByeTrigger.length==0) spec.msgByeTrigger.Insert(1,1);
+        if (spec.msgXtra1.length==0) spec.msgXtra1.Insert(1,1);
+        if (spec.msgXtra2.length==0) spec.msgXtra2.Insert(1,1);
+        if (spec.msgXtra3.length==0) spec.msgXtra3.Insert(1,1);
       }
     }
     if (bEndMessages)

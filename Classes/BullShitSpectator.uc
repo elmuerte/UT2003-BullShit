@@ -1,36 +1,44 @@
 ///////////////////////////////////////////////////////////////////////////////
 // filename:    BullShitSpectator.uc
-// version:     103
+// version:     106
 // author:      Michiel 'El Muerte' Hendriks <elmuerte@drunksnipers.com>
-// perpose:     
+// perpose:
 ///////////////////////////////////////////////////////////////////////////////
 
 class BullShitSpectator extends MessagingSpectator config(BullShit);
 
 var BullShit config;
 
+var config string msg_no_weapon;
+
 // kill related
 var config array<string> msgGotKilled; // say when the bot got killed
 var config array<string> msgKilled; // say when the bot killed
-var config array<string> msgSuicide; 
-var config array<string> msgTeamKill; 
-var config array<string> msgMadeTeamKill; 
+var config array<string> msgSuicide;
+var config array<string> msgTeamKill;
+var config array<string> msgMadeTeamKill;
 
-// message related 
-var config array<string> msgHello; 
-var config array<string> msgHelloTrigger; 
-var config array<string> msgBye; 
-var config array<string> msgByeTrigger; 
+// message related
+var config array<string> msgHello;
+var config array<string> msgHelloTrigger;
+var config array<string> msgBye;
+var config array<string> msgByeTrigger;
 
 // game end related
-var config array<string> msgEndGameWon; 
-var config array<string> msgEndGameLost; 
+var config array<string> msgEndGameWon;
+var config array<string> msgEndGameLost;
 
 // score events
-var config array<string> msgScoreWe; 
-var config array<string> msgScoreThey; 
+var config array<string> msgScoreWe;
+var config array<string> msgScoreThey;
 
-// praises
+// extra triggers
+var config array<string> msgXtra1;
+var config array<string> msgXtra1Trigger;
+var config array<string> msgXtra2;
+var config array<string> msgXtra2Trigger;
+var config array<string> msgXtra3;
+var config array<string> msgXtra3Trigger;
 
 struct DelayedMessage
 {
@@ -48,19 +56,28 @@ function bool speak(float frequency)
   return (frand()<=frequency);
 }
 
-function string formatMessage(coerce string message, PlayerReplicationInfo Killer, PlayerReplicationInfo Killed)
+function string formatMessage(coerce string message, PlayerReplicationInfo Killer, PlayerReplicationInfo Killed,
+                              optional string kweapon, optional string vweapon)
 {
   if (Killer != none)
   {
     ReplaceText(message, "%killer%", Killer.PlayerName);
     ReplaceText(message, "%winner%", Killer.PlayerName);
     ReplaceText(message, "%speaker%", Killer.PlayerName);
+    ReplaceText(message, "%kscore%", string(round(Killer.Score)));
+    ReplaceText(message, "%kdeaths%", string(round(Killer.Deaths)));
+    if (kweapon != "") ReplaceText(message, "%kweapon%", kweapon);
+      else ReplaceText(message, "%kweapon%", msg_no_weapon);
   }
   if (Killed != none)
   {
     ReplaceText(message, "%victim%", Killed.PlayerName);
     ReplaceText(message, "%player%", Killed.PlayerName);
     ReplaceText(message, "%scorer%", Killed.PlayerName);
+    ReplaceText(message, "%vscore%", string(round(Killed.Score)));
+    ReplaceText(message, "%vdeaths%", string(round(Killed.Deaths)));
+    if (vweapon != "") ReplaceText(message, "%vweapon%", vweapon);
+      else ReplaceText(message, "%vweapon%", msg_no_weapon);
   }
   return message;
 }
@@ -89,29 +106,47 @@ function bool isTeamKill(PlayerReplicationInfo Killer, PlayerReplicationInfo Kil
   return (Killer.Team == Killed.Team);
 }
 
-function string sayGotKilled(PlayerReplicationInfo Killer, PlayerReplicationInfo Killed)
+function string sayGotKilled(Controller Killer, Controller Killed)
 {
+  local string kweapon, vweapon;
+  if (Killer.Pawn != none) 
+  {
+    if (Killer.Pawn.Weapon != none) kweapon = Killer.Pawn.Weapon.ItemName;
+  }
+  if (Killed.Pawn != none) 
+  {
+    if (Killed.Pawn.Weapon != none) vweapon = Killed.Pawn.Weapon.ItemName;
+  }
   if (Killed == Killer) // suicide
   {
-    return formatMessage(msgSuicide[Rand(msgSuicide.length)], Killer, Killed);
+    return formatMessage(msgSuicide[Rand(msgSuicide.length)], Killer.PlayerReplicationInfo, Killed.PlayerReplicationInfo, kweapon, vweapon);
   }
-  else if (isTeamKill(Killer, Killed))
+  else if (isTeamKill(Killer.PlayerReplicationInfo, Killed.PlayerReplicationInfo))
   {
-    return formatMessage(msgTeamKill[Rand(msgTeamKill.length)], Killer, Killed);
+    return formatMessage(msgTeamKill[Rand(msgTeamKill.length)], Killer.PlayerReplicationInfo, Killed.PlayerReplicationInfo, kweapon, vweapon);
   }
   else {
-    return formatMessage(msgGotKilled[Rand(msgGotKilled.length)], Killer, Killed);
+    return formatMessage(msgGotKilled[Rand(msgGotKilled.length)], Killer.PlayerReplicationInfo, Killed.PlayerReplicationInfo, kweapon, vweapon);
   }
 }
 
-function string sayKilled(PlayerReplicationInfo Killer, PlayerReplicationInfo Killed)
+function string sayKilled(Controller Killer, Controller Killed)
 {
-  if (isTeamKill(Killer, Killed))
+  local string kweapon, vweapon;
+  if (Killer.Pawn != none) 
   {
-    return formatMessage(msgMadeTeamKill[Rand(msgMadeTeamKill.length)], Killer, Killed);
+    if (Killer.Pawn.Weapon != none) kweapon = Killer.Pawn.Weapon.ItemName;
+  }
+  if (Killed.Pawn != none) 
+  {
+    if (Killed.Pawn.Weapon != none) vweapon = Killed.Pawn.Weapon.ItemName;
+  }
+  if (isTeamKill(Killer.PlayerReplicationInfo, Killed.PlayerReplicationInfo))
+  {
+    return formatMessage(msgMadeTeamKill[Rand(msgMadeTeamKill.length)], Killer.PlayerReplicationInfo, Killed.PlayerReplicationInfo, kweapon, vweapon);
   }
   else {
-    return formatMessage(msgKilled[Rand(msgKilled.length)], Killer, Killed);
+    return formatMessage(msgKilled[Rand(msgKilled.length)], Killer.PlayerReplicationInfo, Killed.PlayerReplicationInfo, kweapon, vweapon);
    }
 }
 
@@ -125,31 +160,31 @@ function NotifyKilled(Controller Killer, Controller Killed, pawn Other)
   {
     if (Killer.PlayerReplicationInfo.bBot)
     {
-      if (speak(config.fKillFrequency)) DoSpeak(Killer, sayKilled(killer.PlayerReplicationInfo, killed.PlayerReplicationInfo));
+      if (speak(config.fKillFrequency)) DoSpeak(Killer, sayKilled(killer, killed));
     }
     if (Killed.PlayerReplicationInfo.bBot)
     {
-      if (speak(config.fKillFrequency)) DoSpeak(Killed, sayGotKilled(killer.PlayerReplicationInfo, killed.PlayerReplicationInfo));
+      if (speak(config.fKillFrequency)) DoSpeak(Killed, sayGotKilled(killer, killed));
     }
   }
 }
 
-/* 
-  The following MaskedCompare routines are taken from the wUtils package 
+/*
+  The following MaskedCompare routines are taken from the wUtils package
   http://wiki.beyondunreal.com/wiki/El_Muerte_TDS/WUtils
                                                                         */
 // Internal function used for MaskedCompare
 static private final function bool _match(out string mask, out string target)
 {
   local string m;
-  if (mask == "") return true; 
+  if (mask == "") return true;
   m = Left(mask,1);
-  if (m == "*") 
-  { 
+  if (m == "*")
+  {
     mask = Mid(mask, 1);
     return _matchstar(m, mask, target);
   }
-  if (Len(target) > 0 && (m == "?" || m == Left(target,1)) ) 
+  if (Len(target) > 0 && (m == "?" || m == Left(target,1)) )
   {
     mask = Mid(mask, 1);
     target = Mid(target, 1);
@@ -198,10 +233,9 @@ static final function bool MaskedCompare(coerce string target, string mask, opti
 }
 /*                                                                      */
 
-// TODO: listen on chatter
 event ClientMessage( coerce string S, optional Name Type )
 {
-  // nothing
+  // do nothing
 }
 
 function TeamMessage( PlayerReplicationInfo PRI, coerce string S, name Type)
@@ -237,6 +271,48 @@ function TeamMessage( PlayerReplicationInfo PRI, coerce string S, name Type)
       }
     }
   }
+  // xtra 1
+  for (i = 0; i < msgXtra1Trigger.length; i++)
+  {
+    if (MaskedCompare(S, msgXtra1Trigger[i]))
+    {
+      for ( C=Level.ControllerList; C!=None; C=C.NextController )
+      {
+        if (C.PlayerReplicationInfo.bBot)
+        {
+          if (speak(config.fChatFrequency)) DoSpeak(C, formatMessage(msgXtra1[Rand(msgXtra1.length)], C.PlayerReplicationInfo, PRI));
+        }
+      }
+    }
+  }
+  // xtra 2
+  for (i = 0; i < msgXtra2Trigger.length; i++)
+  {
+    if (MaskedCompare(S, msgXtra2Trigger[i]))
+    {
+      for ( C=Level.ControllerList; C!=None; C=C.NextController )
+      {
+        if (C.PlayerReplicationInfo.bBot)
+        {
+          if (speak(config.fChatFrequency)) DoSpeak(C, formatMessage(msgXtra2[Rand(msgXtra2.length)], C.PlayerReplicationInfo, PRI));
+        }
+      }
+    }
+  }
+  // xtra 3
+  for (i = 0; i < msgXtra3Trigger.length; i++)
+  {
+    if (MaskedCompare(S, msgXtra3Trigger[i]))
+    {
+      for ( C=Level.ControllerList; C!=None; C=C.NextController )
+      {
+        if (C.PlayerReplicationInfo.bBot)
+        {
+          if (speak(config.fChatFrequency)) DoSpeak(C, formatMessage(msgXtra3[Rand(msgXtra3.length)], C.PlayerReplicationInfo, PRI));
+        }
+      }
+    }
+  }
 }
 
 function ClientVoiceMessage(PlayerReplicationInfo Sender, PlayerReplicationInfo Recipient, name messagetype, byte messageID)
@@ -244,18 +320,19 @@ function ClientVoiceMessage(PlayerReplicationInfo Sender, PlayerReplicationInfo 
   // nothing
 }
 
-function ReceiveLocalizedMessage( class<LocalMessage> Message, optional int Switch, optional PlayerReplicationInfo RelatedPRI_1, optional PlayerReplicationInfo RelatedPRI_2, optional Object OptionalObject )
+simulated function ReceiveLocalizedMessage( class<LocalMessage> Message, optional int Switch, optional PlayerReplicationInfo RelatedPRI_1, optional PlayerReplicationInfo RelatedPRI_2, optional Object OptionalObject )
 {
   local bool bFilteredMessage;
   local int WinningTeam;
   local Controller C;
 
   if ((!Level.Game.bTeamGame) || (!config.bScoreMessages)) return;
-  
+  if (Message == none) return;
+
   //log(message@switch);
 
   bFilteredMessage = false;
-  Message.Static.ClientReceive( Self, Switch, RelatedPRI_1, RelatedPRI_2, OptionalObject );
+
   if (class<CTFMessage>(Message) != none) // CTF Messages
   {
     switch (switch)
@@ -264,9 +341,9 @@ function ReceiveLocalizedMessage( class<LocalMessage> Message, optional int Swit
       case 1: // flag return
       case 4: // flag taken
               bFilteredMessage = true;
-              WinningTeam = RelatedPRI_1.Team.TeamIndex; 
+              WinningTeam = RelatedPRI_1.Team.TeamIndex;
               break;
-    }    
+    }
   }
   else if (class<xBombMessage>(Message) != none)
   {
@@ -276,7 +353,7 @@ function ReceiveLocalizedMessage( class<LocalMessage> Message, optional int Swit
               bFilteredMessage = true;
               WinningTeam = RelatedPRI_1.Team.TeamIndex;
               break;
-    } 
+    }
   }
 
   if (bFilteredMessage)
@@ -285,10 +362,10 @@ function ReceiveLocalizedMessage( class<LocalMessage> Message, optional int Swit
     {
       if ((C.PlayerReplicationInfo.bBot) && (C.PlayerReplicationInfo != RelatedPRI_1) && (C.PlayerReplicationInfo.Team != none))
       {
-        if (speak(config.fScoreFrequency)) 
+        if (speak(config.fScoreFrequency))
         {
           if (C.PlayerReplicationInfo.Team.TeamIndex == WinningTeam) // our team
-            DoSpeak(C, formatMessage(msgScoreWe[Rand(msgScoreWe.length)], C.PlayerReplicationInfo, RelatedPRI_1)); 
+            DoSpeak(C, formatMessage(msgScoreWe[Rand(msgScoreWe.length)], C.PlayerReplicationInfo, RelatedPRI_1));
             else DoSpeak(C, formatMessage(msgScoreThey[Rand(msgScoreThey.length)], C.PlayerReplicationInfo, RelatedPRI_1));
         }
       }
@@ -344,4 +421,15 @@ event Timer()
       messages.remove(i, 1);
     }
   }
+}
+
+function InitPlayerReplicationInfo()
+{
+	Super.InitPlayerReplicationInfo();
+	PlayerReplicationInfo.PlayerName="BullShit";
+}
+
+defaultproperties
+{
+  msg_no_weapon="no weapon"
 }

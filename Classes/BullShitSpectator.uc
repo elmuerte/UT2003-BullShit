@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 // filename:    BullShitSpectator.uc
-// version:     106
+// version:     108
 // author:      Michiel 'El Muerte' Hendriks <elmuerte@drunksnipers.com>
 // perpose:
 ///////////////////////////////////////////////////////////////////////////////
@@ -111,10 +111,7 @@ function string sayGotKilled(Controller Killer, Controller Killed)
   {
     if (Killer.Pawn.Weapon != none) kweapon = Killer.Pawn.Weapon.ItemName;
   }
-  if (Killed.Pawn != none) 
-  {
-    if (Killed.Pawn.Weapon != none) vweapon = Killed.Pawn.Weapon.ItemName;
-  }
+  if (Killed.LastPawnWeapon != none) vweapon = Killed.LastPawnWeapon.default.ItemName;
   if (Killed == Killer) // suicide
   {
     return formatMessage(msgSuicide[Rand(msgSuicide.length)], Killer.PlayerReplicationInfo, Killed.PlayerReplicationInfo, kweapon, vweapon);
@@ -135,10 +132,7 @@ function string sayKilled(Controller Killer, Controller Killed)
   {
     if (Killer.Pawn.Weapon != none) kweapon = Killer.Pawn.Weapon.ItemName;
   }
-  if (Killed.Pawn != none) 
-  {
-    if (Killed.Pawn.Weapon != none) vweapon = Killed.Pawn.Weapon.ItemName;
-  }
+  if (Killed.LastPawnWeapon != none) vweapon = Killed.LastPawnWeapon.default.ItemName;
   if (isTeamKill(Killer.PlayerReplicationInfo, Killed.PlayerReplicationInfo))
   {
     return formatMessage(msgMadeTeamKill[Rand(msgMadeTeamKill.length)], Killer.PlayerReplicationInfo, Killed.PlayerReplicationInfo, kweapon, vweapon);
@@ -327,6 +321,8 @@ simulated function ReceiveLocalizedMessage( class<LocalMessage> Message, optiona
 
   if ((!Level.Game.bTeamGame) || (!config.bScoreMessages)) return;
   if (Message == none) return;
+  if (RelatedPRI_1 == none) return;
+  if (RelatedPRI_1.Team == none) return;
 
   //log(message@switch);
 
@@ -383,7 +379,13 @@ function string sayGameEnd(PlayerReplicationInfo PRI)
     return formatMessage(msgEndGameWon[Rand(msgEndGameWon.length)], PRI, none);
   }
   else {
-    return formatMessage(msgEndGameLost[Rand(msgEndGameLost.length)], PRI, none);
+    if (PlayerReplicationInfo(Level.Game.GameReplicationInfo.Winner) != none)
+    {
+      return formatMessage(msgEndGameLost[Rand(msgEndGameLost.length)], PlayerReplicationInfo(Level.Game.GameReplicationInfo.Winner), PRI);
+    }
+    else {
+      return formatMessage(msgEndGameLost[Rand(msgEndGameLost.length)], none, PRI);
+    }
   }
 }
 

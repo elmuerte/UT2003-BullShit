@@ -8,9 +8,11 @@
 class BullShitSpectator extends MessagingSpectator config(BullShit);
 
 // settings
-var globalconfig float frequency;
+var globalconfig float fKillFrequency;
 var globalconfig bool bKillMessages;
+var globalconfig float fChatFrequency;
 var globalconfig bool bChatMessages;
+var globalconfig float fEndFrequency;
 var globalconfig bool bEndMessages;
 
 // kill related
@@ -22,16 +24,16 @@ var config array<string> msgMadeTeamKill;
 
 // message related 
 var config array<string> msgHello; 
-var config array<string> msgHelloTriggers; 
+var config array<string> msgHelloTrigger; 
 var config array<string> msgBye; 
-var config array<string> msgByeTriggers; 
+var config array<string> msgByeTrigger; 
 
 // game end related
 var config array<string> msgEndGameWon; 
 var config array<string> msgEndGameLost; 
 
 // return true when the bot needs to speak
-function bool speak()
+function bool speak(float frequency)
 {
   return (frand()<=frequency);
 }
@@ -42,10 +44,12 @@ function string formatMessage(coerce string message, PlayerReplicationInfo Kille
   {
     ReplaceText(message, "%killer%", Killer.PlayerName);
     ReplaceText(message, "%winner%", Killer.PlayerName);
+    ReplaceText(message, "%speaker%", Killed.PlayerName);
   }
   if (Killed != none)
   {
     ReplaceText(message, "%victim%", Killed.PlayerName);
+    ReplaceText(message, "%player%", Killed.PlayerName);
   }
   return message;
 }
@@ -56,9 +60,8 @@ function DoSpeak(Controller Speaker, string message)
   if (Speaker != none)
   {
     Level.Game.Broadcast(Speaker, message, 'Say');
-    log(Speaker.PlayerReplicationInfo.PlayerName$":"@message);
+    //log(Speaker.PlayerReplicationInfo.PlayerName$":"@message);
   }
-  else log("==> speaker is none");
 }
 
 function bool isTeamKill(PlayerReplicationInfo Killer, PlayerReplicationInfo Killed)
@@ -101,11 +104,11 @@ function NotifyKilled(Controller Killer, Controller Killed, pawn Other)
   {
     if (Killer.PlayerReplicationInfo.bBot)
     {
-      if (speak()) DoSpeak(Killer, sayKilled(killer.PlayerReplicationInfo, killed.PlayerReplicationInfo));
+      if (speak(fKillFrequency)) DoSpeak(Killer, sayKilled(killer.PlayerReplicationInfo, killed.PlayerReplicationInfo));
     }
     if (Killed.PlayerReplicationInfo.bBot)
     {
-      if (speak()) DoSpeak(Killed, sayGotKilled(killer.PlayerReplicationInfo, killed.PlayerReplicationInfo));
+      if (speak(fKillFrequency)) DoSpeak(Killed, sayGotKilled(killer.PlayerReplicationInfo, killed.PlayerReplicationInfo));
     }
   }
 }
@@ -177,12 +180,40 @@ static final function bool MaskedCompare(coerce string target, string mask, opti
 // TODO: listen on chatter
 event ClientMessage( coerce string S, optional Name Type )
 {
-  if (!bChatMessages) return;
+  // nothing
 }
 
 function TeamMessage( PlayerReplicationInfo PRI, coerce string S, name Type)
 {
-  // nothing
+  local int i;
+  local Controller C;
+  if (!bChatMessages) return;
+  for (i = 0; i < msgHelloTrigger.length; i++)
+  {
+    if (MaskedCompare(S, msgHelloTrigger[i]))
+    {
+      for ( C=Level.ControllerList; C!=None; C=C.NextController )
+      {
+        if (C.PlayerReplicationInfo.bBot && (PRI != C.PlayerReplicationInfo))
+        {
+          if (speak(fChatFrequency)) DoSpeak(C, formatMessage(msgHello[Rand(msgHello.length)], C.PlayerReplicationInfo, PRI));
+        }
+      }
+    }
+  }
+  for (i = 0; i < msgByeTrigger.length; i++)
+  {
+    if (MaskedCompare(S, msgByeTrigger[i]))
+    {
+      for ( C=Level.ControllerList; C!=None; C=C.NextController )
+      {
+        if (C.PlayerReplicationInfo.bBot && (PRI != C.PlayerReplicationInfo))
+        {
+          if (speak(fChatFrequency)) DoSpeak(C, formatMessage(msgBye[Rand(msgBye.length)], C.PlayerReplicationInfo, PRI));
+        }
+      }
+    }
+  }
 }
 
 function ClientVoiceMessage(PlayerReplicationInfo Sender, PlayerReplicationInfo Recipient, name messagetype, byte messageID)
@@ -220,51 +251,19 @@ function ClientGameEnded()
 	{
 		if (C.PlayerReplicationInfo.bBot)
     {
-      if (speak()) DoSpeak(C, sayGameEnd(C.PlayerReplicationInfo));
+      if (speak(fEndFrequency)) DoSpeak(C, sayGameEnd(C.PlayerReplicationInfo));
     }
 	}
 }
 
 defaultproperties 
 {
-  frequency=1.0
+  fKillFrequency=0.33
   bKillMessages=true
+  fChatFrequency=0.5
   bChatMessages=true
+  fEndFrequency=0.75
   bEndMessages=true
 
-  msgGotKilled(0)="Damn it!"
-  msgGotKilled(1)="Didn't see you there %killer%"
-  msgGotKilled(2)="Nice shot %killer%"
-  msgGotKilled(3)="%killer%: next time give me a warning"
-
-  msgKilled(0)="Mwuahahaha"
-  msgKilled(1)="You suck %victim%"
-  msgKilled(2)="Who's yo dadday now %victim%"
-
-  msgSuicide(0)="AAAAAAAaaaaaaaaarrrggggggh"
-  msgSuicide(1)="Oops ;)"
-
-  msgTeamKill(0)="%killer% you asshole"
-  msgTeamKill(1)="Hello!, same team dude"
-
-  msgMadeTeamKill(0)="Sorry %victim%, didn't have my glasses on"
-  msgMadeTeamKill(1)="Oh shit, sorry %victim%"
-
-  msgHello(0)="Hello %player%"
-  msgHello(1)="Welcome to the server %player%"
-
-  msgHelloTriggers(0)="Hi*"
-  msgHelloTriggers(1)="Hello*"
-
-  msgBye(0)="See you next time %player%"
-  msgBye(1)="L8r dude"
-
-  msgByeTriggers(0)="bye*"
-  msgByeTriggers(1)="got to go*"
-
-  msgEndGameWon(0)="GG :)"
-  msgEndGameWon(1)="Yeehaaa"
-
-  msgEndGameLost(0)="GG :("
-  msgEndGameLost(1)="Damn, better luck next time"
+  msgGotKilled(0)="test"
 }

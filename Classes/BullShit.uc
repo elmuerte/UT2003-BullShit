@@ -1,13 +1,13 @@
 ///////////////////////////////////////////////////////////////////////////////
 // filename:    BullShit.uc
-// version:     100
+// version:     101
 // author:      Michiel 'El Muerte' Hendriks <elmuerte@drunksnipers.com>
 // perpose:     
 ///////////////////////////////////////////////////////////////////////////////
 
 class BullShit extends Info config;
 
-const VERSION = "100";
+const VERSION = "101";
 
 // settings
 var config float fKillFrequency;
@@ -31,7 +31,7 @@ function PreBeginPlay()
     // check lines
     if (bKillMessages)
     {
-      bKillMessages=(spec.msgGotKilled.length+spec.msgKilled.length+spec.msgSuicide.length+spec.msgTeamKill.length+spec.msgMadeTeamKill.length)==0;
+      bKillMessages=(spec.msgGotKilled.length+spec.msgKilled.length+spec.msgSuicide.length+spec.msgTeamKill.length+spec.msgMadeTeamKill.length)>0;
       if (bKillMessages)
       {
         if (spec.msgGotKilled.length==0) spec.msgGotKilled.Insert(1,1);
@@ -43,7 +43,7 @@ function PreBeginPlay()
     }
     if (bChatMessages)
     {
-      bChatMessages=(spec.msgHello.length+spec.msgHelloTrigger.length+spec.msgBye.length+spec.msgByeTrigger.length)==0;
+      bChatMessages=(spec.msgHello.length+spec.msgHelloTrigger.length+spec.msgBye.length+spec.msgByeTrigger.length)>0;
       if (bChatMessages)
       {
         if (spec.msgHello.length==0) spec.msgHello.Insert(1,1);
@@ -54,7 +54,7 @@ function PreBeginPlay()
     }
     if (bEndMessages)
     {
-      bEndMessages=(spec.msgEndGameWon.length+spec.msgEndGameLost.length)==0;
+      bEndMessages=(spec.msgEndGameWon.length+spec.msgEndGameLost.length)>0;
       if (bEndMessages)
       {
         if (spec.msgEndGameWon.length==0) spec.msgEndGameWon.Insert(1,1);

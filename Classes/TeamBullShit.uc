@@ -31,7 +31,7 @@ function AddBot(Bot B)
 {
   if (NextSquad != none)
   {
-    AddBot(B);
+    NextSquad.AddBot(B);
   }
   return;
 }

@@ -1,13 +1,13 @@
 ///////////////////////////////////////////////////////////////////////////////
 // filename:    BullShit.uc
-// version:     109
+// version:     110
 // author:      Michiel 'El Muerte' Hendriks <elmuerte@drunksnipers.com>
 // perpose:     
 ///////////////////////////////////////////////////////////////////////////////
 
 class BullShit extends Info config;
 
-const VERSION = "109 beta";
+const VERSION = "110";
 
 // settings
 var config float fKillFrequency;

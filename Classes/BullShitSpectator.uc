@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 // filename:    BullShitSpectator.uc
-// version:     108
+// version:     109
 // author:      Michiel 'El Muerte' Hendriks <elmuerte@drunksnipers.com>
 // perpose:
 ///////////////////////////////////////////////////////////////////////////////
@@ -368,23 +368,55 @@ simulated function ReceiveLocalizedMessage( class<LocalMessage> Message, optiona
   }
 }
 
+function PlayerReplicationInfo GetLowestScoringTeamPlayer(TeamInfo team)
+{
+  local Controller P;
+  local PlayerReplicationInfo other;
+  for ( P=Level.ControllerList; P!=None; P=P.nextController )
+	{
+    if ( (P.PlayerReplicationInfo != None) && (P.PlayerReplicationInfo.Team == team)
+				&& ((other == None) || (P.PlayerReplicationInfo.Score < other.Score)) )
+		{
+				other = P.PlayerReplicationInfo;
+		}
+  }
+  return other;
+}
+
+function PlayerReplicationInfo GetHeightsScoringTeamPlayer(TeamInfo team)
+{
+  local Controller P;
+  local PlayerReplicationInfo other;
+  for ( P=Level.ControllerList; P!=None; P=P.nextController )
+	{
+    if ( (P.PlayerReplicationInfo != None) && (P.PlayerReplicationInfo.Team == team)
+				&& ((other == None) || (P.PlayerReplicationInfo.Score > other.Score)) )
+		{
+				other = P.PlayerReplicationInfo;
+		}
+  }
+  return other;
+}
+
 function string sayGameEnd(PlayerReplicationInfo PRI)
 {
-  if ((PRI.Team == Level.Game.GameReplicationInfo.Winner) && (Level.game.bTeamGame))
+  if (Level.game.bTeamGame)
   {
-    return formatMessage(msgEndGameWon[Rand(msgEndGameWon.length)], PRI, none);
-  }
-  else if (PRI == Level.Game.GameReplicationInfo.Winner)
-  {
-    return formatMessage(msgEndGameWon[Rand(msgEndGameWon.length)], PRI, none);
-  }
-  else {
-    if (PlayerReplicationInfo(Level.Game.GameReplicationInfo.Winner) != none)
+    if (PRI.Team == Level.Game.GameReplicationInfo.Winner) // my team won
     {
-      return formatMessage(msgEndGameLost[Rand(msgEndGameLost.length)], PlayerReplicationInfo(Level.Game.GameReplicationInfo.Winner), PRI);
+      return formatMessage(msgEndGameWon[Rand(msgEndGameWon.length)], PRI, GetLowestScoringTeamPlayer(Level.Game.OtherTeam(PRI.Team)));
     }
     else {
-      return formatMessage(msgEndGameLost[Rand(msgEndGameLost.length)], none, PRI);
+      return formatMessage(msgEndGameLost[Rand(msgEndGameLost.length)], GetHeightsScoringTeamPlayer(Level.Game.OtherTeam(PRI.Team)), PRI);
+    }
+  }
+  else {
+    if (PRI == Level.Game.GameReplicationInfo.Winner) // player won
+    {
+      return formatMessage(msgEndGameWon[Rand(msgEndGameWon.length)], PRI, PlayerReplicationInfo(Level.Game.GameReplicationInfo.Winner));
+    }
+    else {
+      return formatMessage(msgEndGameLost[Rand(msgEndGameLost.length)], PlayerReplicationInfo(Level.Game.GameReplicationInfo.Winner), PRI);
     }
   }
 }

@@ -11,37 +11,37 @@ var BullShitSpectator spec;
 
 function init(BullShitSpectator spect)
 {
-  Team = none;
-  spec = spect;
-  SquadLeader = spawn(class'BullShitController'); // bogus controller
-  size = 0;
+    Team = none;
+    spec = spect;
+    SquadLeader = spawn(class'BullShitController'); // bogus controller
+    size = 0;
 }
 
 function NotifyKilled(Controller Killer, Controller Killed, pawn KilledPawn)
 {
-  if (spec != none) spec.NotifyKilled(Killer, Killed, KilledPawn);
+    if (spec != none) spec.NotifyKilled(Killer, Killed, KilledPawn);
 }
 
 function int GetSize()
 {
-	return 0;
+    return 0;
 }
 
 function AddBot(Bot B)
 {
-  if (NextSquad != none)
-  {
-    NextSquad.AddBot(B);
-  }
-  return;
+    if (NextSquad != none)
+    {
+        NextSquad.AddBot(B);
+    }
+    return;
 }
 
 function SetLeader(Controller C)
 {
-  return;
+    return;
 }
 
 function float BotSuitability(Bot B)
 {
-  return 0;
+    return 0;
 }

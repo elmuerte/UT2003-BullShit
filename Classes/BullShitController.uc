@@ -9,6 +9,6 @@ class BullShitController extends Controller;
 
 defaultproperties
 {
-  bIsPlayer=false
-  bGodMode=true
+    bIsPlayer=false
+    bGodMode=true
 }

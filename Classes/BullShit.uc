@@ -1,13 +1,13 @@
 ///////////////////////////////////////////////////////////////////////////////
 // filename:    BullShit.uc
-// version:     105
+// version:     106
 // author:      Michiel 'El Muerte' Hendriks <elmuerte@drunksnipers.com>
 // perpose:     
 ///////////////////////////////////////////////////////////////////////////////
 
 class BullShit extends Info config;
 
-const VERSION = "105";
+const VERSION = "106";
 
 // settings
 var config float fKillFrequency;
@@ -25,6 +25,8 @@ var config float fMaxDelay;
 
 var BullShitSpectator spec;
 
+const DeltaTime = 0.1;
+
 function PreBeginPlay()
 {
   log("[~] Starting BullShit version: "$VERSION);
@@ -34,7 +36,7 @@ function PreBeginPlay()
   {
     spec = Spawn(class'BullShitSpectator');
     spec.config = self;
-    spec.SetTick(bUseDelay);
+    if (bUseDelay) setTimer(DeltaTime, true);
     // check lines
     if (bKillMessages)
     {
@@ -53,11 +55,11 @@ function PreBeginPlay()
       bChatMessages=(spec.msgHelloTrigger.length+spec.msgByeTrigger.length+spec.msgXtra1Trigger.length+spec.msgXtra2Trigger.length+spec.msgXtra3Trigger.length)>0;
       if (bChatMessages)
       {
-        if (spec.msgHello.length==0) spec.msgHello.Insert(1,1);
-        if (spec.msgBye.length==0) spec.msgBye.Insert(1,1);
-        if (spec.msgXtra1.length==0) spec.msgXtra1.Insert(1,1);
-        if (spec.msgXtra2.length==0) spec.msgXtra2.Insert(1,1);
-        if (spec.msgXtra3.length==0) spec.msgXtra3.Insert(1,1);
+        if (spec.msgHello.length==0) spec.msgHello.Insert(0,1);
+        if (spec.msgBye.length==0) spec.msgBye.Insert(0,1);
+        if (spec.msgXtra1.length==0) spec.msgXtra1.Insert(0,1);
+        if (spec.msgXtra2.length==0) spec.msgXtra2.Insert(0,1);
+        if (spec.msgXtra3.length==0) spec.msgXtra3.Insert(0,1);
       }
     }
     if (bEndMessages)
@@ -65,8 +67,8 @@ function PreBeginPlay()
       bEndMessages=(spec.msgEndGameWon.length+spec.msgEndGameLost.length)>0;
       if (bEndMessages)
       {
-        if (spec.msgEndGameWon.length==0) spec.msgEndGameWon.Insert(1,1);
-        if (spec.msgEndGameLost.length==0) spec.msgEndGameLost.Insert(1,1);
+        if (spec.msgEndGameWon.length==0) spec.msgEndGameWon.Insert(0,1);
+        if (spec.msgEndGameLost.length==0) spec.msgEndGameLost.Insert(0,1);
       }
     }
     if (bScoreMessages)
@@ -74,9 +76,23 @@ function PreBeginPlay()
       bScoreMessages=(spec.msgScoreWe.length+spec.msgScoreThey.length)>0;
       if (bScoreMessages)
       {
-        if (spec.msgScoreWe.length==0) spec.msgScoreWe.Insert(1,1);
-        if (spec.msgScoreThey.length==0) spec.msgScoreThey.Insert(1,1);
+        if (spec.msgScoreWe.length==0) spec.msgScoreWe.Insert(0,1);
+        if (spec.msgScoreThey.length==0) spec.msgScoreThey.Insert(0,1);
       }
+    }
+  }
+}
+
+event Timer()
+{
+  local int i;
+  for (i = 0; i < spec.messages.length; i++)
+  {
+    spec.messages[i].delay = spec.messages[i].delay-DeltaTime;
+    if (spec.messages[i].delay <= 0)
+    {
+      if (spec.messages[i].Speaker != none) Level.Game.Broadcast(spec.messages[i].Speaker, spec.messages[i].message, 'Say');
+      spec.messages.remove(i, 1);
     }
   }
 }

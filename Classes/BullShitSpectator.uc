@@ -48,8 +48,6 @@ struct DelayedMessage
 };
 var array<DelayedMessage> Messages;
 
-const DeltaTime = 0.1;
-
 // return true when the bot needs to speak
 function bool speak(float frequency)
 {
@@ -177,14 +175,14 @@ function NotifyKilled(Controller Killer, Controller Killed, pawn Other)
 static private final function bool _match(out string mask, out string target)
 {
   local string m;
-  if (mask == "") return true;
+  if (mask == "") return true; 
   m = Left(mask,1);
-  if (m == "*")
-  {
+  if (m == "*") 
+  { 
     mask = Mid(mask, 1);
     return _matchstar(m, mask, target);
   }
-  if (Len(target) > 0 && (m == "?" || m == Left(target,1)) )
+  if (Len(target) > 0 && (m == "?" || m == Left(target,1)) ) 
   {
     mask = Mid(mask, 1);
     target = Mid(target, 1);
@@ -225,11 +223,7 @@ static final function bool MaskedCompare(coerce string target, string mask, opti
   }
   if (mask == "*") return true;
 
-  do {
-    if ( _match(mask, target)) return true;
-    target = Mid(target, 1);
-  } until (Len(target) <= 0);
-  return false;
+  return _match(mask, target);
 }
 /*                                                                      */
 
@@ -393,7 +387,6 @@ function ClientGameEnded()
 	local Controller C;
 
   if (!config.bEndMessages) return;
-
   For ( C=Level.ControllerList; C!=None; C=C.NextController )
 	{
 		if (C.PlayerReplicationInfo.bBot)
@@ -401,26 +394,6 @@ function ClientGameEnded()
       if (speak(config.fEndFrequency)) DoSpeak(C, sayGameEnd(C.PlayerReplicationInfo));
     }
 	}
-}
-
-function SetTick(bool set)
-{
-  if (set) setTimer(DeltaTime, true);
-}
-
-event Timer()
-{
-  local int i;
-  for (i = 0; i < messages.length; i++)
-  {
-    messages[i].delay = messages[i].delay-DeltaTime;
-    if (messages[i].delay <= 0)
-    {
-      if (messages[i].Speaker != none) Level.Game.Broadcast(messages[i].Speaker, messages[i].message, 'Say');
-      //else Log("Speaker is none");
-      messages.remove(i, 1);
-    }
-  }
 }
 
 function InitPlayerReplicationInfo()

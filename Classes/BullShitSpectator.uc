@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 // filename:    BullShitSpectator.uc
-// version:     101
+// version:     102
 // author:      Michiel 'El Muerte' Hendriks <elmuerte@drunksnipers.com>
 // perpose:     
 ///////////////////////////////////////////////////////////////////////////////
@@ -202,6 +202,7 @@ function TeamMessage( PlayerReplicationInfo PRI, coerce string S, name Type)
   local int i;
   local Controller C;
   if (!config.bChatMessages) return;
+  if (PRI == none) return;
   if (PRI.bBot) return; // don't respond on bots
   for (i = 0; i < msgHelloTrigger.length; i++)
   {

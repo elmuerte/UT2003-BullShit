@@ -71,7 +71,6 @@ function DoSpeak(Controller Speaker, string message)
       Messages[Messages.Length-1].delay = RandRange(config.fMinDelay, config.fMaxDelay);
       Messages[Messages.Length-1].message = message;
       Messages[Messages.Length-1].Speaker = Speaker;
-      log("Added delayed message:"@Messages[Messages.Length-1].delay@Messages[Messages.Length-1].message);
     }
   }
 }
@@ -286,7 +285,6 @@ event Timer()
     messages[i].delay = messages[i].delay-DeltaTime;
     if (messages[i].delay <= 0)
     {
-      log("speak"@messages[i].message);
       Level.Game.Broadcast(messages[i].Speaker, messages[i].message, 'Say');
       messages.remove(i, 1);
     }

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 // filename:    BullShitSpectator.uc
-// version:     112
+// version:     115
 // author:      Michiel 'El Muerte' Hendriks <elmuerte@drunksnipers.com>
 // perpose:
 ///////////////////////////////////////////////////////////////////////////////
@@ -579,8 +579,7 @@ function ClientGameEnded()
 function InitPlayerReplicationInfo()
 {  
 	Super.InitPlayerReplicationInfo();
-	PlayerReplicationInfo.PlayerName="BullShit"; 
-  SetTimer(config.iChitChat, true);
+	PlayerReplicationInfo.PlayerName="BullShit";   
 }
 
 function AddSquadAI()
@@ -602,11 +601,10 @@ function AddSquadAI()
 function RandomChitChat()
 {
 	local Controller C;
-
   if (!config.bChitChat) return;
   For ( C=Level.ControllerList; C!=None; C=C.NextController )
 	{
-		if (C.PlayerReplicationInfo.bBot)
+		if ((C.PlayerReplicationInfo != none) && C.PlayerReplicationInfo.bBot)
     {
       if (speak(config.fChitChat)) 
       {
@@ -618,7 +616,7 @@ function RandomChitChat()
 }
 
 event Timer()
-{
+{  
   RandomChitChat();
 }
 

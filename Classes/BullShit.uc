@@ -1,13 +1,13 @@
 ///////////////////////////////////////////////////////////////////////////////
 // filename:    BullShit.uc
-// version:     113
+// version:     115
 // author:      Michiel 'El Muerte' Hendriks <elmuerte@drunksnipers.com>
 // perpose:     
 ///////////////////////////////////////////////////////////////////////////////
 
 class BullShit extends Info config;
 
-const VERSION = "114";
+const VERSION = "115";
 
 // settings
 var config float fKillFrequency;
@@ -42,6 +42,7 @@ function PreBeginPlay()
   {
     spec = Spawn(class'BullShitSpectator');
     spec.config = self;
+    spec.SetTimer(iChitChat, true);
     if (bUseDelay) setTimer(DeltaTime, true);
     // check lines
     if (bKillMessages)
@@ -87,6 +88,10 @@ function PreBeginPlay()
         if (spec.msgScoreWe.length==0) spec.msgScoreWe.Insert(0,1);
         if (spec.msgScoreThey.length==0) spec.msgScoreThey.Insert(0,1);
       }
+    }
+    if (bChitChat)
+    {
+      bChitChat=(spec.msgChitChat.length)>0;
     }
   }
 }
